@@ -14,7 +14,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 50%, #8b0000 100%);
             min-height: 100vh;
             padding: 20px;
             position: relative;
@@ -294,7 +294,7 @@
         }
 
         code[class*="language-"] {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-family: 'Courier New', 'Courier', monospace;
             font-size: 0.95em;
             line-height: 1.6;
             text-shadow: none;
@@ -303,7 +303,10 @@
         /* Custom Python Colors */
         .token.comment { color: #6a9955; }
         .token.keyword { color: #c586c0; font-weight: bold; }
-        .token.string { color: #ce9178; }
+        .token.string { 
+            color: #ce9178; 
+            font-family: 'Courier New', 'Courier', monospace !important;
+        }
         .token.number { color: #b5cea8; }
         .token.function { color: #dcdcaa; }
         .token.class-name { color: #4ec9b0; }
@@ -579,6 +582,21 @@
         let generationHistory = JSON.parse(localStorage.getItem('codeHistory') || '[]');
         let previousGenerations = [];
 
+        // Function to convert text to typewriter style
+        function toTypewriter(text) {
+            const typewriterMap = {
+                'A': '𝙰', 'B': '𝙱', 'C': '𝙲', 'D': '𝙳', 'E': '𝙴', 'F': '𝙵', 'G': '𝙶', 'H': '𝙷', 'I': '𝙸', 'J': '𝙹',
+                'K': '𝙺', 'L': '𝙻', 'M': '𝙼', 'N': '𝙽', 'O': '𝙾', 'P': '𝙿', 'Q': '𝚀', 'R': '𝚁', 'S': '𝚂', 'T': '𝚃',
+                'U': '𝚄', 'V': '𝚅', 'W': '𝚆', 'X': '𝚇', 'Y': '𝚈', 'Z': '𝚉',
+                'a': '𝚊', 'b': '𝚋', 'c': '𝚌', 'd': '𝚍', 'e': '𝚎', 'f': '𝚏', 'g': '𝚐', 'h': '𝚑', 'i': '𝚒', 'j': '𝚓',
+                'k': '𝚔', 'l': '𝚕', 'm': '𝚖', 'n': '𝚗', 'o': '𝚘', 'p': '𝚙', 'q': '𝚚', 'r': '𝚛', 's': '𝚜', 't': '𝚝',
+                'u': '𝚞', 'v': '𝚟', 'w': '𝚠', 'x': '𝚡', 'y': '𝚢', 'z': '𝚣',
+                '0': '𝟶', '1': '𝟷', '2': '𝟸', '3': '𝟹', '4': '𝟺', '5': '𝟻', '6': '𝟼', '7': '𝟽', '8': '𝟾', '9': '𝟿'
+            };
+            
+            return text.split('').map(char => typewriterMap[char] || char).join('');
+        }
+
         function switchTab(tabName) {
             // Update tab buttons
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -609,11 +627,16 @@
             const capitalizedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
             const upperName = cleanName.toUpperCase();
 
+            // Convert to typewriter font
+            const typewriterName = toTypewriter(name);
+            const typewriterCapitalized = toTypewriter(capitalizedName);
+            const typewriterUpper = toTypewriter(upperName);
+
             // Track this generation
-            previousGenerations.push({ name, capitalizedName });
+            previousGenerations.push({ name, capitalizedName, typewriterName, typewriterCapitalized });
 
             // Generate Code 1: Message Handler
-            const code1 = `@dp.message_handler(text='${name}')
+            const code1 = `@dp.message_handler(text='╰⪼ ${typewriterName}')
 async def ${cleanName.toLowerCase()}_handler(message: types.Message):
     user_id = message.from_user.id
     user_message_id = message.message_id
@@ -622,11 +645,11 @@ async def ${cleanName.toLowerCase()}_handler(message: types.Message):
     
     if not is_user_active(user_id):
         user_keyboard = get_user_keyboard(user_id)
-        sent_message = await message.reply("❌ Your access has expired. Please enter a new key.", reply_markup=user_keyboard)
+        sent_message = await message.reply("❌ 𝚈𝚘𝚞𝚛 𝚊𝚌𝚌𝚎𝚜𝚜 𝚑𝚊𝚜 𝚎𝚡𝚙𝚒𝚛𝚎𝚍. 𝙿𝚕𝚎𝚊𝚜𝚎 𝚎𝚗𝚝𝚎𝚛 𝚊 𝚗𝚎𝚠 𝚔𝚎𝚢.", reply_markup=user_keyboard)
         asyncio.create_task(delete_message_after_delay(message.chat.id, sent_message.message_id))
         return
     
-    sent_message = await message.reply("🎮 ${capitalizedName} service is now running...")
+    sent_message = await message.reply("🎮 ${typewriterCapitalized} 𝚜𝚎𝚛𝚟𝚒𝚌𝚎 𝚒𝚜 𝚗𝚘𝚠 𝚛𝚞𝚗𝚗𝚒𝚗𝚐...")
     asyncio.create_task(delete_message_after_delay(message.chat.id, sent_message.message_id))
     
     await extract_from_database(message.chat.id, "${capitalizedName}", 500, category='${cleanName.toLowerCase()}')`;
@@ -642,7 +665,7 @@ async def ${cleanName.toLowerCase()}_handler(message: types.Message):
         return '${cleanName.toLowerCase()}'`;
 
             // Generate Code 3: Lines Statistics
-            const code3 = `        elif text == '${capitalizedName} Lines':
+            const code3 = `        elif text == '${typewriterCapitalized} 𝙻𝚒𝚗𝚎𝚜':
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor()
@@ -659,24 +682,24 @@ async def ${cleanName.toLowerCase()}_handler(message: types.Message):
                 conn.close()
                 
                 await message.reply(f"""
-${capitalizedName.toUpperCase()} Lines
+${typewriterUpper} 𝙻𝙸𝙽𝙴𝚂
 
-✅ Total: {total_${cleanName.toLowerCase()}}
-⏳ Pending: {pending_${cleanName.toLowerCase()}}
-✔️ Extracted: {extracted_${cleanName.toLowerCase()}}"""
+✅ 𝚃𝚘𝚝𝚊𝚕: {total_${cleanName.toLowerCase()}}
+⏳ 𝙿𝚎𝚗𝚍𝚒𝚗𝚐: {pending_${cleanName.toLowerCase()}}
+✔️ 𝙴𝚡𝚝𝚛𝚊𝚌𝚝𝚎𝚍: {extracted_${cleanName.toLowerCase()}}"""
                 )
             except Exception as e:
-                await message.reply(f"❌ Error: {str(e)}")`;
+                await message.reply(f"❌ 𝙴𝚛𝚛𝚘𝚛: {str(e)}")`;
 
             // Generate Code 4: Admin Keyboard Page 2 (with stacking)
-            let keyboardRows = `    admin_keyboard.row("Garena Lines", "Roblox Lines")
-    admin_keyboard.row("MLBB Lines", "Activision Lines")
-    admin_keyboard.row("Genshin Lines", "PointBlank Lines")`;
+            let keyboardRows = `    admin_keyboard.row("𝙶𝚊𝚛𝚎𝚗𝚊 𝙻𝚒𝚗𝚎𝚜", "𝚁𝚘𝚋𝚕𝚘𝚡 𝙻𝚒𝚗𝚎𝚜")
+    admin_keyboard.row("𝙼𝙻𝙱𝙱 𝙻𝚒𝚗𝚎𝚜", "𝙰𝚌𝚝𝚒𝚟𝚒𝚜𝚒𝚘𝚗 𝙻𝚒𝚗𝚎𝚜")
+    admin_keyboard.row("𝙶𝚎𝚗𝚜𝚑𝚒𝚗 𝙻𝚒𝚗𝚎𝚜", "𝙿𝚘𝚒𝚗𝚝𝙱𝚕𝚊𝚗𝚔 𝙻𝚒𝚗𝚎𝚜")`;
 
             // Add all previous generations
             for (let gen of previousGenerations) {
                 keyboardRows += `
-    admin_keyboard.row("${gen.capitalizedName} Lines")`;
+    admin_keyboard.row("${gen.typewriterCapitalized} 𝙻𝚒𝚗𝚎𝚜")`;
             }
 
             const code4 = `def get_admin_keyboard_page2():
@@ -686,17 +709,17 @@ ${keyboardRows}
     return admin_keyboard`;
 
             // Generate Code 5: Admin Keyboard Page 3 (with stacking)
-            let importRows = `    admin_keyboard.row("Import Garena Only")
-    admin_keyboard.row("Import Roblox Only")
-    admin_keyboard.row("Import MLBB Only")
-    admin_keyboard.row("Import Activision Only")
-    admin_keyboard.row("Import Genshin Only")
-    admin_keyboard.row("Import PointBlank Only")`;
+            let importRows = `    admin_keyboard.row("𝙸𝚖𝚙𝚘𝚛𝚝 𝙶𝚊𝚛𝚎𝚗𝚊 𝙾𝚗𝚕𝚢")
+    admin_keyboard.row("𝙸𝚖𝚙𝚘𝚛𝚝 𝚁𝚘𝚋𝚕𝚘𝚡 𝙾𝚗𝚕𝚢")
+    admin_keyboard.row("𝙸𝚖𝚙𝚘𝚛𝚝 𝙼𝙻𝙱𝙱 𝙾𝚗𝚕𝚢")
+    admin_keyboard.row("𝙸𝚖𝚙𝚘𝚛𝚝 𝙰𝚌𝚝𝚒𝚟𝚒𝚜𝚒𝚘𝚗 𝙾𝚗𝚕𝚢")
+    admin_keyboard.row("𝙸𝚖𝚙𝚘𝚛𝚝 𝙶𝚎𝚗𝚜𝚑𝚒𝚗 𝙾𝚗𝚕𝚢")
+    admin_keyboard.row("𝙸𝚖𝚙𝚘𝚛𝚝 𝙿𝚘𝚒𝚗𝚝𝙱𝚕𝚊𝚗𝚔 𝙾𝚗𝚕𝚢")`;
 
             // Add all previous generations
             for (let gen of previousGenerations) {
                 importRows += `
-    admin_keyboard.row("Import ${gen.capitalizedName} Only")`;
+    admin_keyboard.row("𝙸𝚖𝚙𝚘𝚛𝚝 ${gen.typewriterCapitalized} 𝙾𝚗𝚕𝚢")`;
             }
 
             const code5 = `def get_admin_keyboard_page3():
@@ -706,25 +729,25 @@ ${importRows}
     return admin_keyboard`;
 
             // Generate Code 6: Import Handlers
-            const code6 = `        elif text == 'Import ${capitalizedName} Only':
+            const code6 = `        elif text == '𝙸𝚖𝚙𝚘𝚛𝚝 ${typewriterCapitalized} 𝙾𝚗𝚕𝚢':
             user_selected_category[message.from_user.id] = '${cleanName.toLowerCase()}'
             choice_keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
-            choice_keyboard.row("Resume ${capitalizedName} Import")
-            choice_keyboard.row("Start ${capitalizedName} From Line 1")
+            choice_keyboard.row("𝚁𝚎𝚜𝚞𝚖𝚎 ${typewriterCapitalized} 𝙸𝚖𝚙𝚘𝚛𝚝")
+            choice_keyboard.row("𝚂𝚝𝚊𝚛𝚝 ${typewriterCapitalized} 𝙵𝚛𝚘𝚖 𝙻𝚒𝚗𝚎 𝟷")
             choice_keyboard.row("Back")
-            await message.reply("Choose import option:", reply_markup=choice_keyboard)
+            await message.reply("𝙲𝚑𝚘𝚘𝚜𝚎 𝚒𝚖𝚙𝚘𝚛𝚝 𝚘𝚙𝚝𝚒𝚘𝚗:", reply_markup=choice_keyboard)
 
-        elif text == 'Resume ${capitalizedName} Import':
+        elif text == '𝚁𝚎𝚜𝚞𝚖𝚎 ${typewriterCapitalized} 𝙸𝚖𝚙𝚘𝚛𝚝':
             ulp_files = [os.path.join(ULP_DIR, f) for f in os.listdir(ULP_DIR) if f.endswith(".txt")]
             if ulp_files:
                 await import_ulp_file_category(ulp_files[0], message.chat.id, '${cleanName.toLowerCase()}', resume=True)
-                await message.reply("Done!", reply_markup=get_admin_keyboard(page=3))
+                await message.reply("𝙳𝚘𝚗𝚎!", reply_markup=get_admin_keyboard(page=3))
                 
-        elif text == 'Start ${capitalizedName} From Line 1':
+        elif text == '𝚂𝚝𝚊𝚛𝚝 ${typewriterCapitalized} 𝙵𝚛𝚘𝚖 𝙻𝚒𝚗𝚎 𝟷':
             ulp_files = [os.path.join(ULP_DIR, f) for f in os.listdir(ULP_DIR) if f.endswith(".txt")]
             if ulp_files:
                 await import_ulp_file_category(ulp_files[0], message.chat.id, '${cleanName.toLowerCase()}', resume=False, from_line_1=True)
-                await message.reply("Done!", reply_markup=get_admin_keyboard(page=3))`;
+                await message.reply("𝙳𝚘𝚗𝚎!", reply_markup=get_admin_keyboard(page=3))`;
 
             // Save to history
             const historyItem = {
@@ -733,6 +756,8 @@ ${importRows}
                 name,
                 cleanName,
                 capitalizedName,
+                typewriterName,
+                typewriterCapitalized,
                 date: new Date().toLocaleString(),
                 codes: { code1, code2, code3, code4, code5, code6 }
             };
